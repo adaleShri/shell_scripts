@@ -1,35 +1,43 @@
-#!/usr/bin/env bash
-set -e
+# Jenkins Installation on Amazon Linux 2023 6.1 AMI
+-----------------------------------------------------------
+sudo dnf update -y
+sudo dnf install java-17-amazon-corretto-devel -y
+sudo wget -O /etc/yum.repos.d/jenkins.repo https://pkg.jenkins.io/redhat-stable/jenkins.repo
+sudo rpm --import https://pkg.jenkins.io/redhat-stable/jenkins.io-2023.key
+sudo dnf install jenkins -y
+sudo systemctl daemon-reload
+sudo systemctl enable jenkins
+sudo systemctl start jenkins
+sudo systemctl status jenkins
 
-echo "=== Updating system ==="
-sudo apt update
+Setup Jenkins
+Access Jenkins on 8080 Port
 
-echo "=== Installing Java and fontconfig ==="
-sudo apt install -y fontconfig openjdk-21-jre
+If you find the node offline; follow the below
+This error occurs because Jenkins monitors disk space by default, and your /tmp partition is running low. On Amazon Linux 2023, the /tmp directory is mounted in memory (tmpfs) by default, which is limited even though you have a 30GB EBS volume.
+Method 1 (Recommended)
+# Create a new /tmp directory on your EBS volume
+sudo mkdir /mnt/tmp
+sudo chmod 1777 /mnt/tmp
 
-echo "=== Adding Jenkins key ==="
-sudo mkdir -p /etc/apt/keyrings
-sudo wget -O /etc/apt/keyrings/jenkins-keyring.asc \
-  https://pkg.jenkins.io/debian/jenkins.io-2026.key
+# Move the existing tmp contents
+sudo rsync -av /tmp/ /mnt/tmp/
 
-echo "=== Adding Jenkins repository ==="
-echo "deb [signed-by=/etc/apt/keyrings/jenkins-keyring.asc] https://pkg.jenkins.io/debian binary/" | \
-  sudo tee /etc/apt/sources.list.d/jenkins.list > /dev/null
+# Update fstab to use the new location
+echo "none /tmp tmpfs defaults,size=2G 0 0" | sudo tee -a /etc/fstab
 
-echo "=== Updating package lists ==="
-sudo apt update
+# Reboot to apply changes
+sudo reboot
 
-echo "=== Installing Jenkins ==="
-sudo apt install -y jenkins
 
-echo "=== Starting and enabling Jenkins ==="
-sudo systemctl enable --now jenkins
-
-echo "=== Installation complete ==="
-echo "Jenkins status:"
-sudo systemctl status jenkins --no-pager
-
-echo "=== Your initial Jenkins admin password ==="
-sudo cat /var/lib/jenkins/secrets/initialAdminPassword
-echo
-echo "Open Jenkins at: http://localhost:8080"
+# Jenkins Installation on Ubuntu 24.04 AMI
+-----------------------------------------------------------
+sudo apt update -y
+sudo apt install fontconfig openjdk-17-jre -y
+sudo wget -O /usr/share/keyrings/jenkins-keyring.asc https://pkg.jenkins.io/debian-stable/jenkins.io-2023.key
+echo "deb [signed-by=/usr/share/keyrings/jenkins-keyring.asc] https://pkg.jenkins.io/debian-stable binary/" | sudo tee /etc/apt/sources.list.d/jenkins.list > /dev/null
+sudo apt update -y
+sudo apt install jenkins -y
+sudo systemctl start jenkins
+sudo systemctl enable jenkins
+sudo systemctl status jenkins
