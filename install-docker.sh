@@ -1,44 +1,38 @@
-#!/usr/bin/env bash
-set -e
-
-echo "==> Updating system and installing prerequisites..."
+# Docker Installation on Ubuntu 24.04 AMI
+----------------------------------------------------
 sudo apt update
-sudo apt install -y ca-certificates curl
-
-echo "==> Creating keyrings directory..."
-sudo install -m 0755 -d /etc/apt/keyrings
-
-echo "==> Downloading Docker GPG key..."
-sudo curl -fsSL https://download.docker.com/linux/debian/gpg -o /etc/apt/keyrings/docker.asc
-sudo chmod a+r /etc/apt/keyrings/docker.asc
-
-echo "==> Adding Docker repository..."
-CODENAME=$(. /etc/os-release && echo "$VERSION_CODENAME")
-
-sudo tee /etc/apt/sources.list.d/docker.sources > /dev/null <<EOF
-Types: deb
-URIs: https://download.docker.com/linux/debian
-Suites: ${CODENAME}
-Components: stable
-Signed-By: /etc/apt/keyrings/docker.asc
-EOF
-
-echo "==> Updating apt sources..."
+sudo apt install -y apt-transport-https ca-certificates curl software-properties-common
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
 sudo apt update
-
-echo "==> Installing Docker Engine..."
 sudo apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+sudo docker run hello-world
 
-echo "==> Enabling and starting Docker service..."
-sudo systemctl enable docker
-sudo systemctl start docker
-
-echo "==> Adding current user to docker group (no sudo required)..."
+(Optional) Add your user to the docker group to run Docker commands without sudo:
 sudo usermod -aG docker $USER
+newgrp docker
 
-echo
-echo "====================================================="
-echo " Docker installation completed successfully!"
-echo " Please log out and log back in to use docker without sudo."
-echo " Test with: docker run hello-world"
-echo "====================================================="
+# Docker-compose Installation on Ubuntu 24.04
+----------------------------------------------------
+sudo apt update
+sudo apt install apt-transport-https ca-certificates curl software-properties-common -y
+
+# Docker Installation on Amazon Linux 2023 6.1 AMI
+---------------------------------------------------------------
+ 
+sudo dnf update -y
+sudo dnf install -y docker
+sudo systemctl start docker
+sudo systemctl enable docker
+sudo usermod -aG docker $USER
+newgrp docker
+docker ps
+
+#Docker Compose Installation
+sudo curl -L https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m) -o /usr/local/bin/docker-compose
+sudo chmod +x /usr/local/bin/docker-compose
+docker-compose --version
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+sudo apt update
+sudo apt install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin -ydocker compose version
